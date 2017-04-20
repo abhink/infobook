@@ -3,6 +3,7 @@ package profiles
 import (
 	"database/sql"
 	"log"
+	"os"
 
 	"golang.org/x/net/context"
 
@@ -19,8 +20,14 @@ type User struct {
 }
 
 func init() {
+	dburl := os.Getenv("DATABASE_URL")
+
+	if dburl == "" {
+		log.Fatal("$DATABASE_URL must be set")
+	}
+
 	var err error
-	db, err = sql.Open("mysql", "abhinav:test@/infobook")
+	db, err = sql.Open("mysql", dburl)
 	if err != nil {
 		log.Fatal(err)
 	}
