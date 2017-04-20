@@ -5,6 +5,7 @@ import (
 	"infobook/profiles"
 	"log"
 	"net/http"
+	"os"
 	"path"
 
 	"golang.org/x/net/context"
@@ -50,9 +51,16 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
+
 	http.HandleFunc("/", loginHandler)
 	http.HandleFunc("/authorise", authHandler)
 	http.HandleFunc("/profile/", profileHandler)
 	http.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("static"))))
-	http.ListenAndServe(":8080", nil)
+
+	http.ListenAndServe(":"+port, nil)
 }
