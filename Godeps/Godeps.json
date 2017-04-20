@@ -1,0 +1,16 @@
+{
+	"ImportPath": "infobook",
+	"GoVersion": "go1.6",
+	"GodepVersion": "v79",
+	"Deps": [
+		{
+			"ImportPath": "github.com/go-sql-driver/mysql",
+			"Comment": "v1.3-6-g9dee4ca",
+			"Rev": "9dee4ca50b83acdf57a35fb9e6fb4be640afa2f3"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "5602c733f70afc6dcec6766be0d5034d4c4f14de"
+		}
+	]
+}
