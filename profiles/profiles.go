@@ -35,10 +35,15 @@ func init() {
 
 func GetUserProfile(ctx context.Context, userId string) (*User, error) {
 	r := User{}
-	err := db.QueryRow("SELECT * FROM profiles WHERE email = ?", userId).Scan(&r)
+	err := db.QueryRow("SELECT * FROM profiles WHERE email = ?", userId).
+		Scan(&r.Email, &r.FullName, &r.Adddress, &r.Telephone)
 	if err != nil {
-		log.Print("error fetching orw: ", err)
-		return nil, err
+		if err != sql.ErrNoRows {
+			log.Print("error fetching row: ", err)
+			return nil, err
+		}
+		log.Print("No rows found.")
+		return nil, nil
 	}
-	return &r, nil
+	return &r
 }
