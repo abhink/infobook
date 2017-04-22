@@ -3,47 +3,81 @@ package profiles
 import (
 	"database/sql"
 	"log"
-	"os"
 
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/context"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
-var db *sql.DB
-
 type User struct {
-	Email     string
-	FullName  string
-	Adddress  string
-	Telephone string
-}
-
-func init() {
-	dburl := os.Getenv("DATABASE_URL")
-
-	if dburl == "" {
-		log.Fatal("$DATABASE_URL must be set")
-	}
-
-	var err error
-	db, err = sql.Open("mysql", dburl)
-	if err != nil {
-		log.Fatal(err)
-	}
+	Email    string `json:"email"`
+	FullName string `json:"name"`
+	Address  string `json:"address"`
+	Phone    string `json:"phone"`
 }
 
 func GetUserProfile(ctx context.Context, userId string) (*User, error) {
+	log.Print("calling with:", userId)
 	r := User{}
 	err := db.QueryRow("SELECT * FROM profiles WHERE email = ?", userId).
-		Scan(&r.Email, &r.FullName, &r.Adddress, &r.Telephone)
+		Scan(&r.Email, &r.FullName, &r.Address, &r.Phone)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			log.Print("error fetching row: ", err)
 			return nil, err
 		}
 		log.Print("No rows found.")
-		return nil, nil
+		return &User{Email: userId}, nil
 	}
-	return &r
+	return &r, nil
+}
+
+func UpdateUser(ctx context.Context, user *User) (*User, error) {
+	_, err := updateUserStmt.Exec(user.Email, user.FullName, user.Address, user.Phone, user.Email)
+	if err != nil {
+		log.Print("error updating user: ", err)
+		return nil, err
+	}
+	return user, nil
+}
+
+func RegisterUser(ctx context.Context, userId, pass string, oauth bool) (*User, error) {
+	t := "LOGIN"
+	if oauth {
+		t = "GOOGLE"
+	}
+	u, _, _, err := getCredentials(ctx, userId)
+	if err != nil {
+		log.Print("error getting credentials: ", err)
+		return nil, err
+	}
+	if u != "" {
+		return nil, ErrUserExists
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
+	if err != nil {
+		log.Print("error creating account: ", err)
+		return nil, err
+	}
+
+	_, err = insertCredentialsStmt.Exec(userId, hash, t)
+	if err != nil {
+		log.Print("error creating user: ", err)
+		return nil, err
+	}
+
+	_, err = insertUserStmt.Exec(userId, "", "", "")
+	if err != nil {
+		log.Print("error creating user, deregistering: ", err)
+		deregisterUser(ctx, userId)
+		return nil, err
+	}
+	return &User{Email: userId}, nil
+}
+
+func deregisterUser(ctx context.Context, userId string) {
+	_, err := db.Exec("DELETE FROM credentials WHERE email = ?", userId)
+	if err != nil {
+		log.Fatal("Failed to deregister user: ", err)
+	}
 }

@@ -2,15 +2,55 @@
 	"ImportPath": "infobook",
 	"GoVersion": "go1.6",
 	"GodepVersion": "v79",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
+		{
+			"ImportPath": "cloud.google.com/go/compute/metadata",
+			"Comment": "v0.7.0-113-g01b9e8c",
+			"Rev": "01b9e8cbca61bf2c704946d6f1790ec412519180"
+		},
 		{
 			"ImportPath": "github.com/go-sql-driver/mysql",
 			"Comment": "v1.3-6-g9dee4ca",
 			"Rev": "9dee4ca50b83acdf57a35fb9e6fb4be640afa2f3"
 		},
 		{
+			"ImportPath": "golang.org/x/crypto/bcrypt",
+			"Rev": "96846453c37f0876340a66a47f3f75b1f3a6cd2d"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/blowfish",
+			"Rev": "96846453c37f0876340a66a47f3f75b1f3a6cd2d"
+		},
+		{
 			"ImportPath": "golang.org/x/net/context",
 			"Rev": "5602c733f70afc6dcec6766be0d5034d4c4f14de"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context/ctxhttp",
+			"Rev": "5602c733f70afc6dcec6766be0d5034d4c4f14de"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2",
+			"Rev": "a6bd8cefa1811bd24b86f8902872e4e8225f74c4"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2/google",
+			"Rev": "a6bd8cefa1811bd24b86f8902872e4e8225f74c4"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2/internal",
+			"Rev": "a6bd8cefa1811bd24b86f8902872e4e8225f74c4"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2/jws",
+			"Rev": "a6bd8cefa1811bd24b86f8902872e4e8225f74c4"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2/jwt",
+			"Rev": "a6bd8cefa1811bd24b86f8902872e4e8225f74c4"
 		}
 	]
 }

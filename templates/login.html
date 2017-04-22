@@ -1,23 +1,26 @@
 <!doctype html>
 <html>
   <head>
+    <link rel="stylesheet" type="text/css" href="/static/stylesheets/main.css">
+    <!-- <script src="/static/closure-library/closure/goog/base.js"></script> -->
+    <!-- <script src="/static/deps.js"></script> -->
+    <script src="/static/app-calc.js"></script>
     <title>Login</title>
   </head>
   <body>
     <h2>InfoBook</h2>
-    <div>
-      <form action="/authorise" method="post">
-        <div>
-          <label for="mail">E-mail:</label>
-          <input type="email" id="mail" name="user_mail">
-        </div>
-        <div>
-          <label for="password">Password:</label>
-          <input type="password" id="msg" name="user_password">
-        </div>
-        <div class="button">
-          <button type="submit">Login</button>
-        </div>
-      </form>
+    <div id="loginview">
+      <div>
+        <label for="mail">E-mail:</label>
+        <input type="email" id="mail" name="user_mail">
+      </div>
+      <div>
+        <label for="password">Password:</label>
+        <input type="password" id="pass" name="user_password">
+      </div>
+      <div id="login" class="button">
+        <button type="submit">Login</button>
+      </div>
+    </div>
   </body>
 </html>

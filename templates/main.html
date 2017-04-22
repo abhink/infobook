@@ -1,10 +1,22 @@
 <!doctype html>
 <html>
   <head>
+    <!-- <script src="/static/closure-library/closure/goog/base.js"></script> -->
+    <!-- <script src="/static/deps.js"></script> -->
+    <link rel="stylesheet" type="text/css" href="/static/stylesheets/main.css">
     <script src="/static/app-calc.js"></script>
+    <script src="/static/soyutils.js"></script>
+    <script src="/static/views.js"></script>
   </head>
   <body>
     <h2>Welcome to InfoBook.</h2>
-    <p>Hello, {{ . }}</p>
+    <br>
+    <div id="view"></div>
+    <div id="oauthlogin">
+      <a href={{ .LoginURL }}>
+        <button type="submit">Login With Google.</button>
+      </a>
+    </div>
+    <br>
   </body>
 </html>

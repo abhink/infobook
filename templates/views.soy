@@ -1,0 +1,98 @@
+{namespace views.infobook}
+
+/**
+ * Login view.
+ */
+{template .login}
+<div id="loginview">
+  <h3>Existing users, log in below:</h3>
+  <div>
+    <label for="mail">E-mail:</label>
+    <input type="email" id="mail" name="user_mail">
+  </div>
+  <div>
+    <label for="pass">Password:</label>
+    <input type="password" id="pass" name="user_password">
+  </div>
+  <div id="login" class="button">
+    <button type="submit">Login</button>
+  </div>
+  <br><br>
+  <h3>New users, please enter below details to create a new account:</h3>
+  <div>
+    <label for="newmail">E-mail:</label>
+    <input type="email" id="newmail" name="new_mail">
+  </div>
+  <div>
+    <label for="newpass">Password:</label>
+    <input type="password" id="newpass" name="new_password">
+  </div>
+  <div>
+    <label for="repass">Re-enter Password:</label>
+    <input type="password" id="repass" name="reentered_password">
+  </div>
+  <div id="create" class="button">
+    <button type="submit">Create Account</button>
+  </div>
+</div>
+{/template}
+
+  
+/**
+ * Profile view.
+ * @param name Full name of user.
+ * @param email User's email address.
+ * @param address User's address.
+ * @param phone User's phone number.
+ */
+{template .profile}
+<div id="profileview">
+  <br>
+  Name: {$name}
+  <br>
+  Email: {$email}
+  <br>
+  Address: {$address}
+  <br>
+  Phone No.: {$phone}
+</div>
+<div id="update" class="button">
+  <button type="submit">Update Account</button>
+</div>
+{/template}
+
+  
+/**
+ * Profile edit view.
+ * @param name Full name of user.
+ * @param email User's email address.
+ * @param address User's address.
+ * @param phone User's phone number.
+ */
+{template .update}
+<div id="updateview">
+  <br>
+  <div>
+    <label for="updatemail">E-mail:</label>
+    <input type="email" id="updatemail" value={$email}>
+  </div>
+  <br>
+  <div>
+    <label for="updatename">Name:</label>
+    <input id="updatename" value={$name}>
+  </div>
+  <br>
+  <div>
+    <label for="updateaddress">Address:</label>
+    <input id="updateaddress" value={$address}>
+  </div>
+  <br>
+  <div>
+    <label for="updatephone">Phone:</label>
+    <input type="email" id="updatephone" value={$phone}>
+  </div>
+</div>
+<div id="update" class="button">
+  <button type="submit">Update Account</button>
+</div>
+{/template}
