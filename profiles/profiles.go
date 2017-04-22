@@ -76,7 +76,7 @@ func RegisterUser(ctx context.Context, userId, pass string, oauth bool) (*User, 
 }
 
 func deregisterUser(ctx context.Context, userId string) {
-	_, err := db.Exec("DELETE FROM credentials WHERE email = ?", userId)
+	_, err := db.Exec("DELETE FROM credentials WHERE userid = ?", userId)
 	if err != nil {
 		log.Fatal("Failed to deregister user: ", err)
 	}

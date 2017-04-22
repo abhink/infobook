@@ -42,7 +42,8 @@ func init() {
 		log.Fatal(err)
 	}
 
-	insertCredentialsStmt, err = db.Prepare("INSERT INTO credentials(email, pass, type) VALUES(?, ?, ?)")
+	insertCredentialsStmt, err = db.Prepare(`INSERT INTO credentials(userid, password, type)
+                                           VALUES(?, ?, ?)`)
 	if err != nil {
 		log.Fatal(err)
 	}
