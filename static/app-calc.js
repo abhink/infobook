@@ -33425,19 +33425,13 @@ pr.js.profile = function(userId, opt_obj) {
 }
 
 pr.js.profile.prototype.fetchProfile_ = function(userId) {
-    var param = 'id=' +  userId;
-    goog.net.XhrIo.send(
-        '/profile/', goog.bind(this.profileCallback_, this), 'POST', param, null);
+    var param = {'email':  userId};
+    pr.js.send(
+        '/profile/', goog.bind(this.profileCallback_, this), 'POST', param);
 }
 
-pr.js.profile.prototype.profileCallback_ = function(event) {
-    var xhr = event.target;
-    this.obj_ = xhr.getResponseJson();
-    console.log('Received: ', this.obj_);
-    if (xhr.getStatus() != 200) {
-        console.log('Error: ', obj);
-        return;
-    }
+pr.js.profile.prototype.profileCallback_ = function(response) {
+    this.obj_ = response;
     pr.js.switchView(
         this.view_, goog.bind(this.attachListeners_, this), this.obj_);
 }
@@ -33477,24 +33471,18 @@ pr.js.update.prototype.updateProfile_ = function() {
     var add = goog.dom.getElement('updateaddress'). value || '';
     var phone = goog.dom.getElement('updatephone'). value || '';
     
-    var param = pr.js.encodeQueryData({
+    var param = {
         'email': email,
         'name': name,
         'address': add,
         'phone': phone
-    })
-    goog.net.XhrIo.send(
-        '/update/', goog.bind(this.updateCallback_, this), 'POST', param, null);
+    }
+    pr.js.send(
+        '/update/', goog.bind(this.updateCallback_, this), 'POST', param);
 }
 
-pr.js.update.prototype.updateCallback_ = function(event) {
-    var xhr = event.target;
-    this.obj_ = xhr.getResponseJson();
-    console.log('Received: ', this.obj_);
-    if (xhr.getStatus() != 200) {
-        console.log('Error: ', this.obj_);
-        return;
-    }
+pr.js.update.prototype.updateCallback_ = function(response) {
+    this.obj_ = response;
     new pr.js.profile(this.obj_['email'], this.obj_);
 }
 
@@ -33521,25 +33509,21 @@ pr.js.login = function() {
     var email = goog.dom.getElement('mail').value || '';
     var pass = goog.dom.getElement('pass'). value || '';
 
-    var callback = function(event) {
-        var xhr = event.target;
-        var obj = xhr.getResponseText();
-        console.log('Received: ', obj);
-        if (xhr.getStatus() == 401) {
-            return;
-        }
-        new pr.js.profile(email);
+    var callback = function(response) {
+        goog.dom.getElement('oauthlogin').innerHTML = "";
+        
+        var logout = goog.dom.createDom('a', null, 'Logout')
+        logout.href = '/logout?email=' + response['email'];
+        goog.dom.appendChild(goog.dom.getElement('logout'), logout);
+        
+        new pr.js.profile(response['email']);
     }
 
     var header = {
         "Authorization": "Basic " + btoa(email + ":" + pass)
     }
-    var p = {
-        'email': email,
-        'pass': pass
-    }
-    goog.net.XhrIo.send(
-        '/authorise', callback, 'POST', pr.js.encodeQueryData(p), header);
+    var p = {'email': email}
+    pr.js.send('/authorise', callback, 'POST', p, header);
 }
 
 pr.js.create = function() {
@@ -33552,33 +33536,20 @@ pr.js.create = function() {
         return
     }
 
-    var callback = function(event) {
-        var xhr = event.target;
-        var obj = xhr.getResponseJson();
-        console.log('Received: ', obj);
-        if (xhr.getStatus() != 200) {
-            return;
-        }
-        new pr.js.update(obj);
+    var callback = function(response) {
+        new pr.js.update(response);
     }
 
     var p = {
         'email': email,
         'pass': pass
     }
-    goog.net.XhrIo.send(
-        '/create/', callback, 'POST', pr.js.encodeQueryData(p));
-}
-
-pr.js.encodeQueryData = function(data) {
-   let ret = [];
-   for (let d in data)
-     ret.push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]));
-   return ret.join('&');
+    pr.js.send('/create/', callback, 'POST', p);
 }
 
 goog.provide('pr.js');
 goog.provide('pr.js.start');
+goog.provide('pr.js.send');
 
 goog.require('pr.js.login');
 goog.require('pr.js.create');
@@ -33591,6 +33562,7 @@ goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.net.XhrIo');
 
+pr.js.xsrf = "";
 
 pr.js.start = function() {
     var newDiv = goog.dom.createDom('h1', {'style': 'background-color:#EEE'},
@@ -33618,6 +33590,45 @@ pr.js.switchView = function(view, opt_attachListenerFunc_, opt_param) {
         opt_attachListenerFunc_();
     }
 }
+
+pr.js.send = function(url, opt_callback, opt_method, opt_content,
+    opt_headers, opt_timeoutInterval) {
+
+    var params = opt_content || {};
+    if (pr.js.xsrf) {
+        params['token'] = pr.js.xsrf;
+    }
+
+    var callback = function(event) {
+        var xhr = event.target;
+        var response = xhr.getResponseJson();
+        console.log('Received: ', response);
+        if (xhr.getStatus() == 401) {
+            console.log('Access denied: ', response['error']);
+            // window.location.href = "/";
+            return;
+        }
+        if (xhr.getStatus() >= 400) {
+            console.log('Error: ', response['error']);
+            return;
+        }
+        pr.js.xsrf = response['token'];
+
+        var data = response['data'];
+        opt_callback(data);
+    }
+    
+    goog.net.XhrIo.send(url, callback, opt_method,
+        encodeQueryData(params), opt_headers, opt_timeoutInterval);
+}
+
+var encodeQueryData = function(data) {
+   let ret = [];
+   for (let d in data)
+     ret.push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]));
+   return ret.join('&');
+}
+
 
 goog.events.listen(window, goog.events.EventType.LOAD, pr.js.start);
 

@@ -1,5 +1,6 @@
 goog.provide('pr.js');
 goog.provide('pr.js.start');
+goog.provide('pr.js.send');
 
 goog.require('pr.js.login');
 goog.require('pr.js.create');
@@ -12,12 +13,11 @@ goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.net.XhrIo');
 
+pr.js.xsrf = "";
 
 pr.js.start = function() {
-    var newDiv = goog.dom.createDom('h1', {'style': 'background-color:#EEE'},
-        'Hello world!');
-    goog.dom.appendChild(document.body, newDiv);
-
+    var hash = window.location.hash;
+    
     switch(window.location.pathname) {
     case "/":
         pr.js.switchView(views.infobook.login);
@@ -39,5 +39,44 @@ pr.js.switchView = function(view, opt_attachListenerFunc_, opt_param) {
         opt_attachListenerFunc_();
     }
 }
+
+pr.js.send = function(url, opt_callback, opt_method, opt_content,
+    opt_headers, opt_timeoutInterval) {
+
+    var params = opt_content || {};
+    if (pr.js.xsrf) {
+        params['token'] = pr.js.xsrf;
+    }
+
+    var callback = function(event) {
+        var xhr = event.target;
+        var response = xhr.getResponseJson();
+        console.log('Received: ', response);
+        if (xhr.getStatus() == 401) {
+            console.log('Access denied: ', response['error']);
+            // window.location.href = "/";
+            return;
+        }
+        if (xhr.getStatus() >= 400) {
+            console.log('Error: ', response['error']);
+            return;
+        }
+        pr.js.xsrf = response['token'];
+
+        var data = response['data'];
+        opt_callback(data);
+    }
+    
+    goog.net.XhrIo.send(url, callback, opt_method,
+        encodeQueryData(params), opt_headers, opt_timeoutInterval);
+}
+
+var encodeQueryData = function(data) {
+   let ret = [];
+   for (let d in data)
+     ret.push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]));
+   return ret.join('&');
+}
+
 
 goog.events.listen(window, goog.events.EventType.LOAD, pr.js.start);

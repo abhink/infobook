@@ -60,9 +60,13 @@ func CheckUser(ctx context.Context, userId string) bool {
 }
 
 func CheckAuth(ctx context.Context, userId, pass string) bool {
-	_, p, _, err := getCredentials(ctx, userId)
+	_, p, t, err := getCredentials(ctx, userId)
 	if err != nil {
-		log.Print(err)
+		log.Print("error getting credentials: ", err)
+		return false
+	}
+	if t == "GOOGLE" {
+		log.Print("credentials type oauth: ", err)
 		return false
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(p), []byte(pass)); err != nil {

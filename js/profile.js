@@ -21,19 +21,13 @@ pr.js.profile = function(userId, opt_obj) {
 }
 
 pr.js.profile.prototype.fetchProfile_ = function(userId) {
-    var param = 'id=' +  userId;
-    goog.net.XhrIo.send(
-        '/profile/', goog.bind(this.profileCallback_, this), 'POST', param, null);
+    var param = {'email':  userId};
+    pr.js.send(
+        '/profile/', goog.bind(this.profileCallback_, this), 'POST', param);
 }
 
-pr.js.profile.prototype.profileCallback_ = function(event) {
-    var xhr = event.target;
-    this.obj_ = xhr.getResponseJson();
-    console.log('Received: ', this.obj_);
-    if (xhr.getStatus() != 200) {
-        console.log('Error: ', obj);
-        return;
-    }
+pr.js.profile.prototype.profileCallback_ = function(response) {
+    this.obj_ = response;
     pr.js.switchView(
         this.view_, goog.bind(this.attachListeners_, this), this.obj_);
 }

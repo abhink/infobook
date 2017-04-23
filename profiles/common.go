@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"net/http"
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -78,18 +77,4 @@ func GetJSON(data json.Marshaler) ([]byte, error) {
 		return nil, err
 	}
 	return b, nil
-}
-
-func SetErrorResponse(w http.ResponseWriter, errMsg string, status int) {
-	w.WriteHeader(status)
-	e := struct {
-		ErrorMsg string `json:"errorMsg"`
-	}{
-		ErrorMsg: errMsg,
-	}
-	b, err := json.Marshal(e)
-	if err != nil {
-		log.Print("cannot write error response: ", err)
-	}
-	w.Write(b)
 }

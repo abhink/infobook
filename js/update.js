@@ -20,24 +20,18 @@ pr.js.update.prototype.updateProfile_ = function() {
     var add = goog.dom.getElement('updateaddress'). value || '';
     var phone = goog.dom.getElement('updatephone'). value || '';
     
-    var param = pr.js.encodeQueryData({
+    var param = {
         'email': email,
         'name': name,
         'address': add,
         'phone': phone
-    })
-    goog.net.XhrIo.send(
-        '/update/', goog.bind(this.updateCallback_, this), 'POST', param, null);
+    }
+    pr.js.send(
+        '/update/', goog.bind(this.updateCallback_, this), 'POST', param);
 }
 
-pr.js.update.prototype.updateCallback_ = function(event) {
-    var xhr = event.target;
-    this.obj_ = xhr.getResponseJson();
-    console.log('Received: ', this.obj_);
-    if (xhr.getStatus() != 200) {
-        console.log('Error: ', this.obj_);
-        return;
-    }
+pr.js.update.prototype.updateCallback_ = function(response) {
+    this.obj_ = response;
     new pr.js.profile(this.obj_['email'], this.obj_);
 }
 
