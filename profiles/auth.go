@@ -4,12 +4,15 @@ import (
 	"database/sql"
 	"io/ioutil"
 	"log"
+	"os"
 
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
+
+var env = ""
 
 var conf = &oauth2.Config{
 	ClientID:     clientID,
@@ -19,6 +22,18 @@ var conf = &oauth2.Config{
 		"https://www.googleapis.com/auth/userinfo.email",
 	},
 	Endpoint: google.Endpoint,
+}
+
+func init() {
+	env = os.Getenv("ENV")
+	if env == "" {
+		env = "prod"
+	}
+
+	log.Print("Env set: ", env)
+	if env == "prod" {
+		conf.RedirectURL = "https://stark-fjord-40589.herokuapp.com/oauthorise"
+	}
 }
 
 func getCredentials(ctx context.Context, userId string) (string, string, string, error) {
