@@ -18,7 +18,7 @@ if (goog.DEBUG) {
 
 
 views.infobook.profile = function(opt_data, opt_ignored) {
-  return '<div id="profileview"><br>Name: ' + soy.$$escapeHtml(opt_data.name) + '<br>Email: ' + soy.$$escapeHtml(opt_data.email) + '<br>Address: ' + soy.$$escapeHtml(opt_data.address) + '<br>Phone No.: ' + soy.$$escapeHtml(opt_data.phone) + '</div><div id="update" class="button"><button type="submit">Update Account</button></div>';
+  return '<div id="profileview"><br>Email: ' + soy.$$escapeHtml(opt_data.email) + '<br>Name: ' + soy.$$escapeHtml(opt_data.name) + '<br>Address: ' + soy.$$escapeHtml(opt_data.address) + '<br>Phone No.: ' + soy.$$escapeHtml(opt_data.phone) + '</div><div id="update" class="button"><button type="submit">Update Account</button></div>';
 };
 if (goog.DEBUG) {
   views.infobook.profile.soyTemplateName = 'views.infobook.profile';
@@ -26,7 +26,7 @@ if (goog.DEBUG) {
 
 
 views.infobook.update = function(opt_data, opt_ignored) {
-  return '<div id="updateview"><br><div><label for="updatemail">E-mail:</label><input type="email" id="updatemail" value=' + soy.$$escapeHtml(opt_data.email) + '></div><br><div><label for="updatename">Name:</label><input id="updatename" value=' + soy.$$escapeHtml(opt_data.name) + '></div><br><div><label for="updateaddress">Address:</label><input id="updateaddress" value=' + soy.$$escapeHtml(opt_data.address) + '></div><br><div><label for="updatephone">Phone:</label><input type="email" id="updatephone" value=' + soy.$$escapeHtml(opt_data.phone) + '></div></div><div id="update" class="button"><button type="submit">Update Account</button></div>';
+  return '<div id="updateview"><br><div><label for="updatemail">E-mail:</label><input type="email" id="updatemail" value="' + soy.$$escapeHtml(opt_data.email) + '"></div><br><div><label for="updatename">Name:</label><input id="updatename" value="' + soy.$$escapeHtml(opt_data.name) + '"></div><br><div><label for="updateaddress">Address:</label><input id="updateaddress" value="' + soy.$$escapeHtml(opt_data.address) + '"></div><br><div><label for="updatephone">Phone:</label><input type="email" id="updatephone" value="' + soy.$$escapeHtml(opt_data.phone) + '"></div></div><div id="update" class="button"><button type="submit">Update Account</button></div>';
 };
 if (goog.DEBUG) {
   views.infobook.update.soyTemplateName = 'views.infobook.update';

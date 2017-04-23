@@ -14,10 +14,25 @@ import (
 )
 
 const (
-	pattern = "templates/*.html"
+	pattern     = "templates/*.html"
+	sessionName = "infobook-session"
 )
 
-var tmpl = template.Must(template.ParseGlob(pattern))
+var (
+	// sessionStore sessions.Store
+
+	tmpl = template.Must(template.ParseGlob(pattern))
+)
+
+// func init() {
+// 	ek := []byte(os.Getenv("SESSION_ENCRYPTION_KEY"))
+// 	ak := []byte(os.Getenv("SESSION_AUTHENTICATION_KEY"))
+// 	if len(ex) == 0 || len(ak) == 0 {
+// 		log.Fatal("Session parameters not set.")
+// 	}
+
+// 	sessionStore = sessions.NewCookieStore(ak, ek)
+// }
 
 type endpoint func(http.ResponseWriter, *http.Request) (interface{}, error)
 
@@ -83,12 +98,13 @@ func oauthHandler(w http.ResponseWriter, r *http.Request) {
 	state := r.Form.Get("state")
 	log.Println("Got OATUH: ", code, state)
 
-	if !profiles.CheckOAuth(context.Background(), code) {
+	user, valid := profiles.CheckOAuth(context.Background(), code)
+	if !valid {
 		w.WriteHeader(401)
 		w.Write([]byte("Unauthorised.\n"))
 		return
 	}
-	w.Write([]byte(fmt.Sprintf("Authorised: OAUTH\n")))
+	w.Write(user)
 }
 
 func createHandler(w http.ResponseWriter, r *http.Request) (interface{}, error) {

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	// secret client id
+	// Google oauth client ID
 	clientID     = "526401365242-9ltlqtil676q9jvi815kdkael0nr75fa.apps.googleusercontent.com"
 	clientSecret = "HvXRJ4IKE8eHahbryJFG8JRS"
 )
@@ -31,7 +31,6 @@ var (
 
 func init() {
 	dburl := os.Getenv("DATABASE_URL")
-
 	if dburl == "" {
 		log.Fatal("$DATABASE_URL must be set")
 	}
@@ -49,7 +48,7 @@ func init() {
 	}
 
 	updateUserStmt, err = db.Prepare(`UPDATE profiles SET email=?, name=?, address=?, phone=?
-                                WHERE email=?`)
+                                    WHERE email=?`)
 	if err != nil {
 		log.Fatal(err)
 	}

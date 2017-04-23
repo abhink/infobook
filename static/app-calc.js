@@ -33418,6 +33418,7 @@ pr.js.profile = function(userId, opt_obj) {
     if (!opt_obj) {
         this.fetchProfile_(userId);
     } else {
+        this.obj_ = opt_obj;
         pr.js.switchView(
             this.view_, goog.bind(this.attachListeners_, this), opt_obj);
     }
@@ -33451,7 +33452,7 @@ pr.js.profile.prototype.attachListeners_ = function() {
     }
     goog.events.listen(
         goog.dom.getElement('update'),
-        goog.events.EventType.CLICK, goog.bind(f, this));
+        goog.events.EventType.CLICK, goog.bind(f, this, this.obj_));
 }
 
 goog.provide('pr.js.update');

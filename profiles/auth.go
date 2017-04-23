@@ -23,7 +23,7 @@ var conf = &oauth2.Config{
 
 func getCredentials(ctx context.Context, userId string) (string, string, string, error) {
 	var u, p, t string
-	if err := db.QueryRow("SELECT * FROM credentials WHERE email = ?", userId).
+	if err := db.QueryRow("SELECT * FROM credentials WHERE userid = ?", userId).
 		Scan(&u, &p, &t); err != nil {
 		if err != sql.ErrNoRows {
 			log.Print("error fetching row: ", err)
@@ -56,21 +56,19 @@ func CheckAuth(ctx context.Context, userId, pass string) bool {
 	return true
 }
 
-func CheckOAuth(ctx context.Context, code string) bool {
+func CheckOAuth(ctx context.Context, code string) ([]byte, bool) {
 	tok, err := conf.Exchange(oauth2.NoContext, code)
 	if err != nil {
-		// c.AbortWithError(http.StatusBadRequest, err)
-		return false
+		return nil, false
 	}
 	// Construct the client.
 	client := conf.Client(oauth2.NoContext, tok)
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v3/userinfo")
 	if err != nil {
-		// c.AbortWithError(http.StatusBadRequest, err)
-		return false
+		return nil, false
 	}
 	defer resp.Body.Close()
 	data, _ := ioutil.ReadAll(resp.Body)
 	log.Print(string(data))
-	return false
+	return data, true
 }
