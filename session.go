@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -28,8 +29,8 @@ func randStringRunes(n int) string {
 	return string(b)
 }
 
-func setSession(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	userId := r.FormValue("email")
+func setSessionValue(ctx context.Context, w http.ResponseWriter, r *http.Request, val string) error {
+	userID := val
 
 	session, err := sessionStore.Get(r, sessionName)
 	if err != nil {
@@ -37,12 +38,30 @@ func setSession(ctx context.Context, w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
-	session.Values["userId"] = userId
+	session.Values["userID"] = userID
 	if err := session.Save(r, w); err != nil {
 		log.Print("error setting session: ", err)
 		return err
 	}
-	log.Print("session set: ", userId)
+	log.Print("session set: ", userID)
+	return nil
+}
+
+func setSession(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	userID := r.FormValue("email")
+
+	session, err := sessionStore.Get(r, sessionName)
+	if err != nil {
+		log.Print("error getting session store: ", err)
+		return err
+	}
+
+	session.Values["userID"] = userID
+	if err := session.Save(r, w); err != nil {
+		log.Print("error setting session: ", err)
+		return err
+	}
+	log.Print("session set: ", userID)
 	return nil
 }
 
@@ -53,12 +72,12 @@ func checkSession(ctx context.Context, r *http.Request) error {
 		return err
 	}
 
-	userId, found := session.Values["userId"]
-	if !found || userId == "" {
+	userID, found := session.Values["userID"]
+	if !found || userID == "" {
 		log.Print("invalid session: ", err)
-		return err
+		return fmt.Errorf("invalid session")
 	}
-	log.Print("SESSION FOUND?? -- ", userId)
+	log.Print("SESSION FOUND?? -- ", userID)
 	return nil
 }
 
@@ -68,34 +87,41 @@ func clearSession(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		log.Print("error getting session store: ", err)
 	}
 
-	session.Values["userId"] = ""
+	session.Values["userID"] = ""
 	if err := session.Save(r, w); err != nil {
 		log.Print("error clearing session: ", err)
 	}
 }
 
-func setXSRF(userId string) string {
+func setXSRF(userID string) string {
 	m.Lock()
 	defer m.Unlock()
 
 	token := randStringRunes(8)
-	xsrf[userId] = token
+	xsrf[userID] = token
 	log.Print("XSRF set: ", xsrf)
 
 	return token
 }
 
-func checkXSRF(userId, token string) bool {
+func getXSRF(userID string) string {
 	m.Lock()
 	defer m.Unlock()
 
-	log.Print("XSRF got: ", userId, xsrf)
-	return xsrf[userId] == token
+	return xsrf[userID]
 }
 
-func clearXSRF(userId string) {
+func checkXSRF(userID, token string) bool {
 	m.Lock()
 	defer m.Unlock()
 
-	delete(xsrf, userId)
+	log.Print("XSRF got: ", userID, xsrf)
+	return xsrf[userID] == token
+}
+
+func clearXSRF(userID string) {
+	m.Lock()
+	defer m.Unlock()
+
+	delete(xsrf, userID)
 }

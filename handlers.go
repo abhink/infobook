@@ -18,7 +18,10 @@ type response struct {
 }
 
 type handlerOpts struct {
-	SkipXSRF bool
+	CheckAccess   bool
+	SkipXSRF      bool
+	PopulateToken bool
+	RefreshToken  bool
 }
 
 type endpoint struct {
@@ -37,7 +40,7 @@ func (e *endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	access := checkAccess(context.Background(), w, r, e.Opts.SkipXSRF)
 	if !access {
-		SetErrorResponse(w, "not authorized", http.StatusUnauthorized)
+		SetErrorResponse(w, "access denied", http.StatusUnauthorized)
 		return
 	}
 
@@ -48,9 +51,17 @@ func (e *endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token := r.Form.Get("token")
+	if e.Opts.PopulateToken {
+		email := r.Form.Get("userid")
+		if email != "" {
+			token = getXSRF(email)
+		}
+	}
+
 	b, err := json.Marshal(&response{
 		Data:  data,
-		Token: r.Form.Get("token"),
+		Token: token,
 	})
 	if err != nil {
 		SetErrorResponse(w, "error fetching user", http.StatusInternalServerError)
@@ -60,29 +71,44 @@ func (e *endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-type entrypoint func(context.Context, *http.Request) (interface{}, error)
+type entrypoint struct {
+	Handler func(context.Context, *http.Request) (interface{}, error)
+	Opts    handlerOpts
+}
 
-func (e entrypoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (e *entrypoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("X-Frame-Options", "SAMEORIGIN")
 
 	if err := r.ParseForm(); err != nil {
 		SetErrorResponse(w, "cannot parse form data", http.StatusInternalServerError)
 	}
+
+	// Entry point may still require access checks.
+	if e.Opts.CheckAccess {
+		access := checkAccess(context.Background(), w, r, e.Opts.SkipXSRF)
+		if !access {
+			SetErrorResponse(w, "access denied", http.StatusUnauthorized)
+			return
+		}
+	}
+
 	if err := setSession(context.Background(), w, r); err != nil {
-		SetErrorResponse(w, "internal error", http.StatusInternalServerError)
+		s := fmt.Sprintf("error: %s", err)
+		SetErrorResponse(w, s, http.StatusInternalServerError)
 		return
 	}
 
 	token := setXSRF(r.FormValue("email"))
 
-	data, err := e(context.Background(), r)
+	data, err := e.Handler(context.Background(), r)
 	if err != nil {
-		status := http.StatusInternalServerError
 		if err == ErrUnauthorized {
-			status = http.StatusUnauthorized
+			SetErrorResponse(w, "access denied", http.StatusUnauthorized)
+			return
 		}
-		SetErrorResponse(w, "internal error", status)
+		s := fmt.Sprintf("error: %s", err)
+		SetErrorResponse(w, s, http.StatusInternalServerError)
 		return
 	}
 
@@ -100,10 +126,9 @@ func (e entrypoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func profileHandler(ctx context.Context, r *http.Request) (interface{}, error) {
 	email := r.Form.Get("email")
-	log.Println("getting for: ", email, r.Form)
 	u, err := profiles.GetUserProfile(ctx, email)
 	if err != nil {
-		panic(err)
+		fmt.Errorf("error getting profile for: %s", email)
 	}
 	return u, nil
 }
@@ -116,27 +141,14 @@ func authHandler(ctx context.Context, r *http.Request) (interface{}, error) {
 	return &profiles.User{Email: u}, nil
 }
 
-func oauthHandler(ctx context.Context, r *http.Request) (interface{}, error) {
-	if err := r.ParseForm(); err != nil {
-		panic(err)
-	}
-	code := r.Form.Get("code")
-	state := r.Form.Get("state")
-	log.Println("Got OATUH: ", code, state)
-
-	user, valid := profiles.CheckOAuth(ctx, code)
-	if !valid {
-		return nil, ErrUnauthorized
-	}
-	return user, nil
-}
-
 func createHandler(ctx context.Context, r *http.Request) (interface{}, error) {
-	if err := r.ParseForm(); err != nil {
-		panic(err)
-	}
 	email := r.Form.Get("email")
 	pass := r.Form.Get("pass")
+
+	// if _, err := mail.ParseAddress(email); err != nil {
+	// 	return nil, fmt.Errorf("invalid email address: %v", err)
+	// }
+
 	u, err := profiles.RegisterUser(ctx, email, pass, false)
 	if err != nil {
 		return nil, err
@@ -145,28 +157,72 @@ func createHandler(ctx context.Context, r *http.Request) (interface{}, error) {
 }
 
 func updateHandler(ctx context.Context, r *http.Request) (interface{}, error) {
-	if err := r.ParseForm(); err != nil {
-		panic(err)
-	}
 	user := &profiles.User{
 		r.Form.Get("email"),
 		r.Form.Get("name"),
 		r.Form.Get("address"),
 		r.Form.Get("phone"),
 	}
-	log.Print("Updating: ", user)
-	u, err := profiles.UpdateUser(ctx, user)
+	newID := r.Form.Get("email")
+	oldID := r.Form.Get("oldemail")
+
+	if oldID != newID {
+		_, err := profiles.ReRegisterUser(ctx, oldID, newID)
+		if err != nil {
+			log.Printf("error updating credentials: %v", err)
+			return nil, err
+		}
+	}
+
+	u, err := profiles.UpdateUser(ctx, user, oldID)
 	if err != nil {
 		return nil, err
 	}
 	return u, nil
 }
 
+type templateResponse struct {
+	LoginURL string
+	Email    string
+	Token    string
+}
+
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	param := struct {
-		LoginURL string `json`
-	}{
+	param := templateResponse{
 		LoginURL: profiles.GetLoginURL(),
+	}
+	if err := tmpl.ExecuteTemplate(w, "main.html", param); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func oauthHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	if err := r.ParseForm(); err != nil {
+		SetErrorResponse(w, "cannot parse form data", http.StatusInternalServerError)
+	}
+
+	code := r.Form.Get("code")
+
+	// TODO: Verify state!!!
+	// state := r.Form.Get("state")
+
+	user, err := profiles.RegisterOAuthUser(ctx, code)
+	if err != nil {
+		SetErrorResponse(w, "user not authorised", http.StatusInternalServerError)
+		return
+	}
+
+	if err := setSessionValue(ctx, w, r, user.Email); err != nil {
+		SetErrorResponse(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
+	token := setXSRF(user.Email)
+
+	param := templateResponse{
+		Email: user.Email,
+		Token: token,
 	}
 	if err := tmpl.ExecuteTemplate(w, "main.html", param); err != nil {
 		log.Fatal(err)
@@ -202,4 +258,10 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	wg.Wait()
 
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func tokenHandler(ctx context.Context, r *http.Request) (interface{}, error) {
+	// TODO: Add Header Origin checks.
+
+	return "", nil
 }

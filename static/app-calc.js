@@ -33442,6 +33442,9 @@ pr.js.profile.prototype.updateHash_ = function() {
 
 pr.js.profile.prototype.attachListeners_ = function() {
     var f = function() {
+        if (pr.js['xsrf'] === "") {
+            pr.js.send('/token', function(){}, 'POST', {'userid': this.obj_['email']});
+        }
         new pr.js.update(this.obj_);
     }
     goog.events.listen(
@@ -33457,6 +33460,8 @@ goog.require('goog.net.XhrIo');
 pr.js.update = function(data) {
     this.obj_ = data;
 
+    this.userId_ = data['email'];
+
     this.view_ = views.infobook.update;
     
     this.updateHash_();
@@ -33470,15 +33475,24 @@ pr.js.update.prototype.updateProfile_ = function() {
     var name = goog.dom.getElement('updatename'). value || '';
     var add = goog.dom.getElement('updateaddress'). value || '';
     var phone = goog.dom.getElement('updatephone'). value || '';
-    
+
     var param = {
+        'userid': this.userId_,
         'email': email,
         'name': name,
         'address': add,
-        'phone': phone
+        'phone': phone,
+        'oldemail': this.userId_
     }
+
+    var updatePath = '/update/';
+    
+    if (email != this.userId_) {
+        updatePath = '/updateid/';
+    }
+    
     pr.js.send(
-        '/update/', goog.bind(this.updateCallback_, this), 'POST', param);
+        updatePath, goog.bind(this.updateCallback_, this), 'POST', param);
 }
 
 pr.js.update.prototype.updateCallback_ = function(response) {
@@ -33487,7 +33501,7 @@ pr.js.update.prototype.updateCallback_ = function(response) {
 }
 
 pr.js.update.prototype.updateHash_ = function() {
-    document.location.hash = 'update/' + this.userId_;
+    document.location.hash = 'update/' + this.obj_['email'];
 }
 
 pr.js.update.prototype.attachListeners_ = function() {
@@ -33510,12 +33524,7 @@ pr.js.login = function() {
     var pass = goog.dom.getElement('pass'). value || '';
 
     var callback = function(response) {
-        goog.dom.getElement('oauthlogin').innerHTML = "";
-        
-        var logout = goog.dom.createDom('a', null, 'Logout')
-        logout.href = '/logout?email=' + response['email'];
-        goog.dom.appendChild(goog.dom.getElement('logout'), logout);
-        
+        pr.js.addLogout(response['email']);
         new pr.js.profile(response['email']);
     }
 
@@ -33537,6 +33546,7 @@ pr.js.create = function() {
     }
 
     var callback = function(response) {
+        pr.js.addLogout(response['email']);
         new pr.js.update(response);
     }
 
@@ -33550,6 +33560,7 @@ pr.js.create = function() {
 goog.provide('pr.js');
 goog.provide('pr.js.start');
 goog.provide('pr.js.send');
+goog.provide('pr.js.addLogou');
 
 goog.require('pr.js.login');
 goog.require('pr.js.create');
@@ -33565,12 +33576,19 @@ goog.require('goog.net.XhrIo');
 pr.js.xsrf = "";
 
 pr.js.start = function() {
-    var newDiv = goog.dom.createDom('h1', {'style': 'background-color:#EEE'},
-        'Hello world!');
-    goog.dom.appendChild(document.body, newDiv);
+    var oauth = goog.dom.getElement('oauthemail');
+    var token = goog.dom.getElement('oauthtoken');
 
-    switch(window.location.pathname) {
-    case "/":
+    if (oauth && token) {
+        var email = oauth.innerText;
+        pr.js.addLogout(email);
+        new pr.js.profile(email);
+        return;
+    }
+    var hash = window.location.hash.split('/');
+    
+    switch(hash[0]) {
+    case "":
         pr.js.switchView(views.infobook.login);
         
         goog.events.listen(
@@ -33579,7 +33597,20 @@ pr.js.start = function() {
         goog.events.listen(
             goog.dom.getElement('create'),
             goog.events.EventType.CLICK, pr.js.create);
+        break;
+    case "#profiles":
+    case "#update":
+        var email = hash[1];
+        if (!email) {
+            console.log("username missing")
+            return
+        }
+        pr.js.addLogout(email);
+        new pr.js.profile(email);
+        break;
     }
+    
+    
     
 };
 
@@ -33604,14 +33635,14 @@ pr.js.send = function(url, opt_callback, opt_method, opt_content,
         var response = xhr.getResponseJson();
         console.log('Received: ', response);
         if (xhr.getStatus() == 401) {
-            console.log('Access denied: ', response['error']);
-            // window.location.href = "/";
+            showError(response['error']);
             return;
         }
         if (xhr.getStatus() >= 400) {
-            console.log('Error: ', response['error']);
+            showError(response['error']);
             return;
         }
+        showError("", true);
         pr.js.xsrf = response['token'];
 
         var data = response['data'];
@@ -33622,11 +33653,28 @@ pr.js.send = function(url, opt_callback, opt_method, opt_content,
         encodeQueryData(params), opt_headers, opt_timeoutInterval);
 }
 
+pr.js.addLogout = function(email) {
+    goog.dom.getElement('oauthlogin').innerHTML = "";
+    
+    var logout = goog.dom.createDom('a', null, 'Logout')
+    logout.href = '/logout?email=' + email;
+    goog.dom.appendChild(goog.dom.getElement('logout'), logout);
+}
+
 var encodeQueryData = function(data) {
    let ret = [];
    for (let d in data)
      ret.push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]));
    return ret.join('&');
+}
+
+var showError = function(error, clearErr) {
+    var errElem = goog.dom.getElement('error');
+    if (clearErr) {
+        errElem.innerText = "";
+        return;
+    }
+    errElem.innerText = error;
 }
 
 

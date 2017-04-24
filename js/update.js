@@ -6,6 +6,8 @@ goog.require('goog.net.XhrIo');
 pr.js.update = function(data) {
     this.obj_ = data;
 
+    this.userId_ = data['email'];
+
     this.view_ = views.infobook.update;
     
     this.updateHash_();
@@ -19,15 +21,24 @@ pr.js.update.prototype.updateProfile_ = function() {
     var name = goog.dom.getElement('updatename'). value || '';
     var add = goog.dom.getElement('updateaddress'). value || '';
     var phone = goog.dom.getElement('updatephone'). value || '';
-    
+
     var param = {
+        'userid': this.userId_,
         'email': email,
         'name': name,
         'address': add,
-        'phone': phone
+        'phone': phone,
+        'oldemail': this.userId_
     }
+
+    var updatePath = '/update/';
+    
+    if (email != this.userId_) {
+        updatePath = '/updateid/';
+    }
+    
     pr.js.send(
-        '/update/', goog.bind(this.updateCallback_, this), 'POST', param);
+        updatePath, goog.bind(this.updateCallback_, this), 'POST', param);
 }
 
 pr.js.update.prototype.updateCallback_ = function(response) {
@@ -36,7 +47,7 @@ pr.js.update.prototype.updateCallback_ = function(response) {
 }
 
 pr.js.update.prototype.updateHash_ = function() {
-    document.location.hash = 'update/' + this.userId_;
+    document.location.hash = 'update/' + this.obj_['email'];
 }
 
 pr.js.update.prototype.attachListeners_ = function() {

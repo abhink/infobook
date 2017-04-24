@@ -60,13 +60,12 @@ func checkAccess(ctx context.Context, w http.ResponseWriter, r *http.Request, sk
 			return
 		}
 
-		u, t := r.Form.Get("email"), r.Form.Get("token")
+		u, t := r.Form.Get("userid"), r.Form.Get("token")
 		tokenOK = checkXSRF(u, t)
+		log.Print("Checked token: ", u, t, skipXSRF, tokenOK)
 	}()
 
 	wg.Wait()
-
-	log.Print("CHECKS PASSED: ", sessionOK && tokenOK)
 	return sessionOK && tokenOK
 }
 
@@ -79,16 +78,24 @@ func main() {
 
 	http.HandleFunc("/", loginHandler)
 	http.HandleFunc("/logout", logoutHandler)
+	http.HandleFunc("/oauthorise", oauthHandler)
 
-	http.Handle("/authorise", entrypoint(authHandler))
-	http.Handle("/oauthorise", entrypoint(oauthHandler))
-	http.Handle("/create/", entrypoint(createHandler))
+	http.Handle("/authorise", &entrypoint{Handler: authHandler})
+	http.Handle("/create/", &entrypoint{Handler: createHandler})
+	http.Handle("/updateid/", &entrypoint{
+		Handler: updateHandler,
+		Opts:    handlerOpts{CheckAccess: true},
+	})
 
 	http.Handle("/profile/", &endpoint{
 		Handler: profileHandler,
 		Opts:    handlerOpts{SkipXSRF: true},
 	})
 	http.Handle("/update/", &endpoint{Handler: updateHandler})
+	http.Handle("/token", &endpoint{
+		Handler: tokenHandler,
+		Opts:    handlerOpts{SkipXSRF: true, PopulateToken: true},
+	})
 
 	http.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("static"))))
 

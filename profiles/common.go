@@ -24,6 +24,7 @@ var ErrUserExists = errors.New("user already exists")
 var (
 	db                    *sql.DB
 	insertCredentialsStmt *sql.Stmt
+	updateCredentialsStmt *sql.Stmt
 	insertUserStmt        *sql.Stmt
 	updateUserStmt        *sql.Stmt
 )
@@ -42,6 +43,12 @@ func init() {
 
 	insertCredentialsStmt, err = db.Prepare(`INSERT INTO credentials(userid, password, type)
                                            VALUES(?, ?, ?)`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	updateCredentialsStmt, err = db.Prepare(`UPDATE credentials SET userid=?, password=?, type=?
+                                           WHERE userid=?`)
 	if err != nil {
 		log.Fatal(err)
 	}

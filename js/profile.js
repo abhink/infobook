@@ -38,6 +38,9 @@ pr.js.profile.prototype.updateHash_ = function() {
 
 pr.js.profile.prototype.attachListeners_ = function() {
     var f = function() {
+        if (pr.js['xsrf'] === "") {
+            pr.js.send('/token', function(){}, 'POST', {'userid': this.obj_['email']});
+        }
         new pr.js.update(this.obj_);
     }
     goog.events.listen(

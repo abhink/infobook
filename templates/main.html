@@ -11,11 +11,18 @@
   <body>
     <h2>Welcome to InfoBook.</h2>
     <br>
+    <div id="error"></div>
+    <br><br>
     <div id="view"></div>
     <div id="oauthlogin">
-      <a href={{ .LoginURL }}>
-        <button type="submit">Login With Google.</button>
-      </a>
+      {{ if not .Email }}
+        <a href={{ .LoginURL }}>
+          <button type="submit">Login With Google.</button>
+        </a>
+      {{ else }}
+        <div id="oauthemail" style="display:none">{{ .Email }}</div>
+        <div id="oauthtoken" style="display:none">{{ .Token }}</div>
+      {{ end }}
     </div>
     <br><br>
     <div id="logout"></div>

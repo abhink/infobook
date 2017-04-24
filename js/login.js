@@ -11,12 +11,7 @@ pr.js.login = function() {
     var pass = goog.dom.getElement('pass'). value || '';
 
     var callback = function(response) {
-        goog.dom.getElement('oauthlogin').innerHTML = "";
-        
-        var logout = goog.dom.createDom('a', null, 'Logout')
-        logout.href = '/logout?email=' + response['email'];
-        goog.dom.appendChild(goog.dom.getElement('logout'), logout);
-        
+        pr.js.addLogout(response['email']);
         new pr.js.profile(response['email']);
     }
 
@@ -38,6 +33,7 @@ pr.js.create = function() {
     }
 
     var callback = function(response) {
+        pr.js.addLogout(response['email']);
         new pr.js.update(response);
     }
 

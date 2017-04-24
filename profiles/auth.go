@@ -50,15 +50,6 @@ func getCredentials(ctx context.Context, userId string) (string, string, string,
 	return u, p, t, nil
 }
 
-func CheckUser(ctx context.Context, userId string) bool {
-	u, _, t, err := getCredentials(ctx, userId)
-	if err != nil {
-		log.Print(err)
-		return false
-	}
-	return u == "" || t != "GOOGLE"
-}
-
 func CheckAuth(ctx context.Context, userId, pass string) bool {
 	_, p, t, err := getCredentials(ctx, userId)
 	if err != nil {
@@ -78,12 +69,14 @@ func CheckAuth(ctx context.Context, userId, pass string) bool {
 func CheckOAuth(ctx context.Context, code string) ([]byte, bool) {
 	tok, err := conf.Exchange(oauth2.NoContext, code)
 	if err != nil {
+		log.Print("OAuth code exchange failed: ", err)
 		return nil, false
 	}
 	// Construct the client.
 	client := conf.Client(oauth2.NoContext, tok)
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v3/userinfo")
 	if err != nil {
+		log.Print("OAuth client fetch failed: ", err)
 		return nil, false
 	}
 	defer resp.Body.Close()
